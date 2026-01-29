@@ -4,8 +4,11 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    // Use base path only for GitHub Pages
+    const isGitHubPages = process.env.GITHUB_PAGES === 'true';
+
     return {
-      base: '/douyin-viral-engine/',
+      base: isGitHubPages ? '/douyin-viral-engine/' : '/',
       server: {
         port: 3000,
         host: '0.0.0.0',

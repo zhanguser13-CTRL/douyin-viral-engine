@@ -1,6 +1,12 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { GeneratedResult } from "../types";
 
+// Detect if we're running on Vercel (has API routes) or static hosting
+const isVercelDeployment = typeof window !== 'undefined' &&
+  (window.location.hostname.includes('vercel.app') ||
+   window.location.hostname.includes('localhost') ||
+   !window.location.hostname.includes('github.io'));
+
 // Define the schema for strict JSON output
 const outputSchema = {
   type: Type.OBJECT,
@@ -87,11 +93,37 @@ OUTPUT: **Simplified Chinese**.
 Return ONLY valid JSON matching the provided schema.
 `;
 
-export const generateViralCopy = async (
+// Call via backend API (for Vercel deployment)
+async function callViaBackend(
   content: string,
   mediaData: { mimeType: string, data: string } | null,
   evolutionHistory: string[]
-): Promise<string> => {
+): Promise<string> {
+  const response = await fetch('/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      content,
+      mediaData,
+      history: evolutionHistory
+    })
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || 'API request failed');
+  }
+
+  return result.data;
+}
+
+// Call directly via Google SDK (for static hosting or fallback)
+async function callDirectly(
+  content: string,
+  mediaData: { mimeType: string, data: string } | null,
+  evolutionHistory: string[]
+): Promise<string> {
   const apiKey = process.env.API_KEY || "AIzaSyCyN0LFoAegAqUgmPH1FiGT34mZC82Fi9A";
   if (!apiKey) throw new Error("API Key not found");
 
@@ -128,9 +160,7 @@ export const generateViralCopy = async (
 
   parts.push({ text: textPrompt });
 
-  // Try multiple models in order of preference
   const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
-
   let lastError: any = null;
 
   for (const modelName of models) {
@@ -154,12 +184,29 @@ export const generateViralCopy = async (
     } catch (error: any) {
       console.error(`Model ${modelName} failed:`, error?.message || error);
       lastError = error;
-      // Continue to next model
     }
   }
 
-  // If all models failed, throw detailed error
-  const errorMessage = lastError?.message || 'Unknown error';
-  console.error("All models failed. Last error:", errorMessage);
-  throw new Error(`API调用失败: ${errorMessage}`);
+  throw lastError || new Error('All models failed');
+}
+
+export const generateViralCopy = async (
+  content: string,
+  mediaData: { mimeType: string, data: string } | null,
+  evolutionHistory: string[]
+): Promise<string> => {
+  // Try backend API first (works for China users via Vercel)
+  if (isVercelDeployment) {
+    try {
+      console.log('Trying backend API...');
+      return await callViaBackend(content, mediaData, evolutionHistory);
+    } catch (error: any) {
+      console.error('Backend API failed:', error.message);
+      // Fall through to direct call
+    }
+  }
+
+  // Fallback to direct API call
+  console.log('Trying direct API call...');
+  return await callDirectly(content, mediaData, evolutionHistory);
 };
