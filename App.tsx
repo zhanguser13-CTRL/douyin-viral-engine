@@ -189,17 +189,43 @@ const AppContent: React.FC = () => {
       <main className="max-w-7xl mx-auto px-6 pt-36">
         
         {/* Festive Hero Section */}
-        <div className="text-center mb-16 max-w-4xl mx-auto space-y-6 animate-fade-in-up">
-           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950/50 border border-red-800/50 text-red-300 text-[10px] font-bold tracking-widest uppercase mb-4 shadow-[0_0_15px_rgba(220,38,38,0.3)]">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
-              2026 Year of the Horse Special Edition
+        <div className="text-center mb-16 max-w-4xl mx-auto space-y-6 relative">
+           {/* Floating decorative elements */}
+           <div className="absolute -top-20 -left-20 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl animate-float"></div>
+           <div className="absolute -top-10 -right-20 w-60 h-60 bg-red-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
+
+           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-red-950/50 to-amber-950/50 border border-red-800/50 text-red-300 text-xs font-bold tracking-widest uppercase mb-6 shadow-[0_0_20px_rgba(220,38,38,0.3)] animate-bounce-in backdrop-blur-sm">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+              <span className="relative">
+                2026 Year of the Horse Special Edition
+                <span className="absolute inset-0 animate-shimmer"></span>
+              </span>
            </div>
-          <h2 className="text-4xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-100 via-amber-300 to-orange-600 tracking-tight leading-tight drop-shadow-sm">
+
+          <h2 className="text-5xl md:text-8xl font-black gradient-text tracking-tight leading-tight drop-shadow-2xl animate-scale-in relative">
             {t.heroTitle}
+            <div className="absolute inset-0 blur-2xl opacity-30 bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 -z-10"></div>
           </h2>
-          <p className="text-red-200/60 text-lg md:text-xl leading-relaxed max-w-2xl mx-auto font-medium">
+
+          <p className="text-red-200/70 text-xl md:text-2xl leading-relaxed max-w-2xl mx-auto font-medium animate-fade-in-up stagger-1 relative z-10">
              {t.heroDesc}
           </p>
+
+          {/* Animated stats */}
+          <div className="flex justify-center gap-8 mt-8 animate-fade-in-up stagger-2">
+            <div className="text-center glass rounded-xl px-6 py-4 hover-lift">
+              <div className="text-3xl font-black text-amber-400 animate-bounce-in">10K+</div>
+              <div className="text-xs text-red-200/60 mt-1">用户使用</div>
+            </div>
+            <div className="text-center glass rounded-xl px-6 py-4 hover-lift">
+              <div className="text-3xl font-black text-amber-400 animate-bounce-in stagger-1">98%</div>
+              <div className="text-xs text-red-200/60 mt-1">满意度</div>
+            </div>
+            <div className="text-center glass rounded-xl px-6 py-4 hover-lift">
+              <div className="text-3xl font-black text-amber-400 animate-bounce-in stagger-2">50M+</div>
+              <div className="text-xs text-red-200/60 mt-1">爆款生成</div>
+            </div>
+          </div>
         </div>
 
         {/* Input */}

@@ -19,10 +19,17 @@ export const ResultCard: React.FC<ResultCardProps> = React.memo(({ option }) => 
   };
 
   const scoreNum = parseInt(option.viralScore.replace('%', '')) || 90;
-  
+
   return (
-    <div className="group relative bg-[#2a0b0b] border border-amber-500/20 rounded-2xl hover:border-amber-400/50 transition-all duration-500 flex flex-col h-full overflow-hidden hover:shadow-[0_0_30px_rgba(220,38,38,0.2)]">
-      
+    <div className="group relative bg-[#2a0b0b] border border-amber-500/20 rounded-2xl hover:border-amber-400/50 transition-all duration-500 flex flex-col h-full overflow-hidden hover:shadow-[0_0_40px_rgba(220,38,38,0.3)] hover-lift animate-scale-in">
+
+      {/* Animated background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+      {/* Shimmer effect on hover */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+        <div className="absolute inset-0 animate-shimmer"></div>
+      </div>
       {/* Header */}
       <div className="px-6 py-5 border-b border-amber-500/10 flex justify-between items-center bg-gradient-to-r from-red-950/20 to-transparent">
         <div className="flex items-center gap-3">
