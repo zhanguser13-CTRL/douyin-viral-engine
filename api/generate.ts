@@ -1,6 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyCyN0LFoAegAqUgmPH1FiGT34mZC82Fi9A";
+// IMPORTANT: API key must be set in Vercel environment variables
+// Never hardcode API keys in source code
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+if (!GEMINI_API_KEY) {
+  console.error('GEMINI_API_KEY environment variable is not set');
+}
 
 const outputSchema = {
   type: "OBJECT",
@@ -137,7 +143,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -145,6 +151,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Check if API key is configured
+  if (!GEMINI_API_KEY) {
+    return res.status(500).json({
+      success: false,
+      error: 'API密钥未配置，请联系管理员'
+    });
+  }
+
+  // Basic authentication check - verify Authorization header exists
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      error: '未登录或登录已过期'
+    });
   }
 
   try {

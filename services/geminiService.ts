@@ -99,9 +99,15 @@ async function callViaBackend(
   mediaData: { mimeType: string, data: string } | null,
   evolutionHistory: string[]
 ): Promise<string> {
+  // Get token from localStorage for authentication
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
   const response = await fetch('/api/generate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    },
     body: JSON.stringify({
       content,
       mediaData,
@@ -119,13 +125,19 @@ async function callViaBackend(
 }
 
 // Call directly via Google SDK (for static hosting or fallback)
+// WARNING: This exposes the API key in client-side code
+// Only use this for development or when backend is unavailable
 async function callDirectly(
   content: string,
   mediaData: { mimeType: string, data: string } | null,
   evolutionHistory: string[]
 ): Promise<string> {
-  const apiKey = process.env.API_KEY || "AIzaSyCyN0LFoAegAqUgmPH1FiGT34mZC82Fi9A";
-  if (!apiKey) throw new Error("API Key not found");
+  // SECURITY: API key should come from environment variables only
+  // The fallback key has been removed for security
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key not configured. Please use the backend API or set API_KEY environment variable.");
+  }
 
   const ai = new GoogleGenAI({ apiKey });
 

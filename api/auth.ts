@@ -1,7 +1,23 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import crypto from 'crypto';
 
+/**
+ * WARNING: This is a demo implementation using in-memory storage.
+ *
+ * CRITICAL ISSUES FOR PRODUCTION:
+ * 1. Data is lost when the serverless function cold starts
+ * 2. Each function instance has its own memory (no data sharing)
+ * 3. SHA256 is not secure for password hashing (use bcrypt)
+ *
+ * FOR PRODUCTION, USE:
+ * - A proper database (PostgreSQL, MongoDB, etc.)
+ * - Vercel KV, Upstash Redis, or PlanetScale
+ * - bcrypt or argon2 for password hashing
+ * - JWT with proper secret management
+ */
+
 // 简单的内存存储（生产环境应使用数据库）
+// WARNING: This data will be lost on server restart and is not shared between function instances
 const users = new Map<string, {
   id: string;
   email: string;

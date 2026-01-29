@@ -1,6 +1,21 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// 简单的内存存储（生产环境应使用数据库）
+/**
+ * WARNING: This is a demo implementation.
+ *
+ * CRITICAL ISSUES:
+ * 1. These Maps are separate instances from auth.ts - they don't share data!
+ * 2. No actual payment processing - just simulates adding credits
+ * 3. Data is lost on server restart
+ *
+ * FOR PRODUCTION:
+ * - Use a shared database for user data
+ * - Integrate with a real payment provider (Stripe, Alipay, WeChat Pay)
+ * - Implement proper payment verification webhooks
+ */
+
+// WARNING: These Maps are NOT shared with auth.ts!
+// In production, use a database to share user data between API endpoints
 const users = new Map<string, {
   id: string;
   email: string;
