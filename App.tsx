@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { generateViralCopy } from './services/geminiService';
 import { parseGeminiOutput } from './utils/parser';
 import { InputSection } from './components/InputSection';
@@ -7,8 +7,10 @@ import { FooterCopy } from './components/FooterCopy';
 import { EvolutionPanel } from './components/EvolutionPanel';
 import { TrendAnalysis } from './components/TrendAnalysis';
 import { EditingGuide } from './components/EditingGuide';
+import { AuthModal } from './components/auth/AuthModal';
+import { RechargeModal } from './components/auth/RechargeModal';
 import { AppState, MediaData } from './types';
-import { Zap, Globe, Flame } from 'lucide-react';
+import { Zap, Globe, Flame, LogOut, Wallet } from 'lucide-react';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 const AppContent: React.FC = () => {
@@ -22,14 +24,64 @@ const AppContent: React.FC = () => {
     showFeedback: false,
   });
 
+  const [user, setUser] = useState<any>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showRechargeModal, setShowRechargeModal] = useState(false);
+
+  // 检查登录状态
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('user');
+
+    if (token && savedUser) {
+      setUser(JSON.parse(savedUser));
+    } else {
+      setShowAuthModal(true);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    setShowAuthModal(true);
+  };
+
+  const handleAuthSuccess = (token: string, userData: any) => {
+    setUser(userData);
+  };
+
+  const handleRechargeSuccess = (newCredits: number) => {
+    setUser((prev: any) => ({ ...prev, credits: newCredits }));
+    const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    savedUser.credits = newCredits;
+    localStorage.setItem('user', JSON.stringify(savedUser));
+  };
+
   const handleGenerate = useCallback(async () => {
     if (!state.inputText.trim() && !state.mediaData) return;
+
+    // 检查次数
+    if (user && user.credits <= 0) {
+      alert('使用次数不足，请充值！');
+      setShowRechargeModal(true);
+      return;
+    }
 
     setState(prev => ({ ...prev, isLoading: true, result: null }));
 
     try {
       const rawText = await generateViralCopy(state.inputText, state.mediaData, state.history);
       const parsedResult = parseGeminiOutput(rawText);
+
+      // 扣除次数
+      if (user) {
+        const newCredits = user.credits - 1;
+        setUser((prev: any) => ({ ...prev, credits: newCredits }));
+        const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        savedUser.credits = newCredits;
+        localStorage.setItem('user', JSON.stringify(savedUser));
+      }
 
       setState(prev => ({
         ...prev,
@@ -41,7 +93,6 @@ const AppContent: React.FC = () => {
       console.error("Generation error:", error);
       const errorMsg = error?.message || '未知错误';
 
-      // Provide helpful error messages based on error type
       let userMessage = '算法连接失败。';
       if (errorMsg.includes('API key')) {
         userMessage = 'API密钥无效或已过期，请联系管理员。';
@@ -60,7 +111,7 @@ const AppContent: React.FC = () => {
       alert(userMessage);
       setState(prev => ({ ...prev, isLoading: false }));
     }
-  }, [state.inputText, state.mediaData, state.history]);
+  }, [state.inputText, state.mediaData, state.history, user]);
 
   const handleFeedback = useCallback((feedback: string) => {
     setState(prev => ({
@@ -102,7 +153,29 @@ const AppContent: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-4">
-             <button 
+             {user && (
+               <>
+                 <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-full">
+                   <Zap className="w-3.5 h-3.5 text-amber-400" />
+                   <span className="text-xs font-bold text-amber-300">{user.credits}</span>
+                 </div>
+                 <button
+                   onClick={() => setShowRechargeModal(true)}
+                   className="flex items-center gap-2 text-xs font-bold text-amber-500/60 hover:text-amber-300 transition-colors px-3 py-1.5 rounded-full hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20"
+                 >
+                   <Wallet className="w-3.5 h-3.5" />
+                   <span>充值</span>
+                 </button>
+                 <button
+                   onClick={handleLogout}
+                   className="flex items-center gap-2 text-xs font-bold text-red-500/60 hover:text-red-300 transition-colors px-3 py-1.5 rounded-full hover:bg-red-500/10 border border-transparent hover:border-red-500/20"
+                 >
+                   <LogOut className="w-3.5 h-3.5" />
+                   <span>退出</span>
+                 </button>
+               </>
+             )}
+             <button
                onClick={() => setLanguage(language === 'zh' ? 'en' : 'zh')}
                className="flex items-center gap-2 text-xs font-bold text-amber-500/60 hover:text-amber-300 transition-colors px-3 py-1.5 rounded-full hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20"
              >
@@ -181,6 +254,23 @@ const AppContent: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => {}}
+        onSuccess={handleAuthSuccess}
+      />
+
+      {/* Recharge Modal */}
+      {user && (
+        <RechargeModal
+          isOpen={showRechargeModal}
+          onClose={() => setShowRechargeModal(false)}
+          currentCredits={user.credits}
+          onSuccess={handleRechargeSuccess}
+        />
+      )}
     </div>
   );
 };
