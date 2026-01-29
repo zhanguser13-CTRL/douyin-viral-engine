@@ -92,7 +92,7 @@ export const generateViralCopy = async (
   mediaData: { mimeType: string, data: string } | null,
   evolutionHistory: string[]
 ): Promise<string> => {
-  const apiKey = process.env.API_KEY || "gen-lang-client-07066818900";
+  const apiKey = process.env.API_KEY || "AIzaSyCyN0LFoAegAqUgmPH1FiGT34mZC82Fi9A";
   if (!apiKey) throw new Error("API Key not found");
 
   const ai = new GoogleGenAI({ apiKey });
