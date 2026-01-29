@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>爆款引擎 - 控制台</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            dark: {
+              900: '#0a0202',
+              800: '#1a0505',
+              700: '#2a0b0b',
+              600: '#3a1515',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0a0202 0%, #1a0505 50%, #0a0202 100%);
+      min-height: 100vh;
+      color: #fef3c7;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+    ::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.3); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.5); }
+
+    /* Glass Effect */
+    .glass {
+      background: linear-gradient(135deg, rgba(42, 11, 11, 0.9) 0%, rgba(26, 5, 5, 0.8) 100%);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .glass-light {
+      background: rgba(42, 11, 11, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(245, 158, 11, 0.15);
+    }
+
+    /* Gradient Text */
+    .gradient-text {
+      background: linear-gradient(135deg, #fef3c7 0%, #f59e0b 50%, #ea580c 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Pulse Animation */
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+    .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+    /* Spinner */
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #f59e0b;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Floating Orbs */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Sidebar hover */
+    .sidebar-item {
+      transition: all 0.2s ease;
+    }
+    .sidebar-item:hover {
+      background: rgba(245, 158, 11, 0.1);
+      border-left-color: rgba(245, 158, 11, 0.8);
+    }
+    .sidebar-item.active {
+      background: rgba(245, 158, 11, 0.15);
+      border-left-color: #f59e0b;
+    }
+
+    /* Result Card */
+    .result-card {
+      transition: all 0.3s ease;
+    }
+    .result-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(245, 158, 11, 0.5);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Tag */
+    .tag {
+      transition: all 0.2s ease;
+    }
+    .tag:hover {
+      background: rgba(245, 158, 11, 0.3);
+      transform: scale(1.05);
+    }
+
+    /* Textarea */
+    textarea:focus {
+      outline: none;
+      border-color: rgba(245, 158, 11, 0.5);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+    }
+
+    /* Button Shine */
+    .btn-shine {
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-shine::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s ease;
+    }
+    .btn-shine:hover::before {
+      left: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Background Orbs -->
+  <div class="orb" style="top: -100px; left: -100px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%);"></div>
+  <div class="orb" style="bottom: -150px; right: -150px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(239, 68, 68, 0.1) 0%, transparent 70%);"></div>
+
+  <div class="flex min-h-screen relative z-10">
+
+    <!-- ==================== SIDEBAR ==================== -->
+    <aside class="w-64 glass border-r border-amber-500/20 flex flex-col fixed h-full">
+      <!-- Logo -->
+      <div class="p-6 border-b border-amber-500/10">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/30">
+            <i class="fas fa-fire text-white"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-amber-50">爆款引擎</h1>
+            <p class="text-[10px] text-amber-500/60 uppercase tracking-wider">Pro Dashboard</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1 p-4 space-y-1">
+        <a href="#" class="sidebar-item active flex items-center gap-3 px-4 py-3 rounded-xl text-amber-50 border-l-2 border-transparent">
+          <i class="fas fa-wand-magic-sparkles text-amber-400 w-5"></i>
+          <span class="text-sm font-medium">内容生成</span>
+        </a>
+        <a href="#" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-rose-200/70 border-l-2 border-transparent hover:text-amber-50">
+          <i class="fas fa-clock-rotate-left text-amber-500/50 w-5"></i>
+          <span class="text-sm font-medium">历史记录</span>
+        </a>
+        <a href="#" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-rose-200/70 border-l-2 border-transparent hover:text-amber-50">
+          <i class="fas fa-chart-line text-amber-500/50 w-5"></i>
+          <span class="text-sm font-medium">数据分析</span>
+        </a>
+        <a href="#" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-rose-200/70 border-l-2 border-transparent hover:text-amber-50">
+          <i class="fas fa-bookmark text-amber-500/50 w-5"></i>
+          <span class="text-sm font-medium">收藏夹</span>
+        </a>
+        <a href="#" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-rose-200/70 border-l-2 border-transparent hover:text-amber-50">
+          <i class="fas fa-gear text-amber-500/50 w-5"></i>
+          <span class="text-sm font-medium">设置</span>
+        </a>
+      </nav>
+
+      <!-- User Section -->
+      <div class="p-4 border-t border-amber-500/10">
+        <div class="glass-light rounded-xl p-4">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-amber-600 to-red-600 rounded-full flex items-center justify-center">
+              <i class="fas fa-user text-white text-sm"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p id="user-email" class="text-sm font-medium text-amber-50 truncate">user@example.com</p>
+              <p class="text-xs text-amber-500/60">Pro 会员</p>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-rose-200/50">剩余次数</span>
+            <span id="user-credits" class="text-amber-400 font-bold">10</span>
+          </div>
+          <div class="mt-2 h-1.5 bg-black/30 rounded-full overflow-hidden">
+            <div id="credits-bar" class="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-500" style="width: 100%"></div>
+          </div>
+        </div>
+
+        <button onclick="handleLogout()" class="mt-3 w-full flex items-center justify-center gap-2 py-2.5 text-red-400/70 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-all text-sm">
+          <i class="fas fa-right-from-bracket"></i>
+          <span>退出登录</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <main class="flex-1 ml-64">
+
+      <!-- Top Bar -->
+      <header class="sticky top-0 z-40 glass-light border-b border-amber-500/10 px-8 py-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-bold text-amber-50">内容生成工作台</h2>
+            <p class="text-xs text-rose-200/50 mt-0.5">AI 驱动的爆款内容创作平台</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <!-- Credits Badge -->
+            <div class="flex items-center gap-2 px-4 py-2 glass rounded-xl">
+              <i class="fas fa-bolt text-amber-400"></i>
+              <span id="header-credits" class="text-sm font-bold text-amber-300">10</span>
+              <span class="text-xs text-rose-200/50">次</span>
+            </div>
+            <!-- Recharge Button -->
+            <button class="px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-xl text-amber-400 text-sm font-medium hover:border-amber-400/50 transition-all">
+              <i class="fas fa-coins mr-2"></i>充值
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <div class="p-8 space-y-8">
+
+        <!-- ==================== INPUT SECTION ==================== -->
+        <section class="glass rounded-2xl p-6 relative overflow-hidden">
+          <!-- Decorative Corner -->
+          <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full"></div>
+
+          <div class="relative z-10">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-10 h-10 bg-gradient-to-br from-amber-500/20 to-orange-600/20 rounded-xl flex items-center justify-center">
+                <i class="fas fa-pen-fancy text-amber-400"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-amber-50">输入您的内容</h3>
+                <p class="text-xs text-rose-200/50">粘贴文字或上传图片/视频素材</p>
+              </div>
+            </div>
+
+            <textarea
+              id="input-text"
+              rows="4"
+              placeholder="在这里输入您想要分析的内容，或者描述您想要创作的主题..."
+              class="w-full bg-black/30 border border-amber-500/20 rounded-xl p-4 text-amber-50 placeholder-rose-200/30 resize-none transition-all"
+            ></textarea>
+
+            <div class="flex items-center justify-between mt-4">
+              <div class="flex items-center gap-3">
+                <button class="flex items-center gap-2 px-4 py-2 glass-light rounded-lg text-rose-200/70 hover:text-amber-400 hover:border-amber-500/30 transition-all text-sm">
+                  <i class="fas fa-image"></i>
+                  <span>上传图片</span>
+                </button>
+                <button class="flex items-center gap-2 px-4 py-2 glass-light rounded-lg text-rose-200/70 hover:text-amber-400 hover:border-amber-500/30 transition-all text-sm">
+                  <i class="fas fa-video"></i>
+                  <span>上传视频</span>
+                </button>
+              </div>
+
+              <button
+                id="generate-btn"
+                onclick="handleGenerate()"
+                class="btn-shine px-6 py-3 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-amber-500/30 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                <span id="btn-text" class="flex items-center gap-2">
+                  <i class="fas fa-wand-magic-sparkles"></i>
+                  生成爆款内容
+                </span>
+                <span id="btn-loading" class="hidden items-center gap-2">
+                  <span class="spinner w-5 h-5"></span>
+                  生成中...
+                </span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== RESULTS SECTION ==================== -->
+        <section id="results-section" class="hidden space-y-6">
+
+          <!-- Section Header -->
+          <div class="flex items-center gap-4">
+            <div class="h-px bg-amber-500/20 flex-1"></div>
+            <span class="text-xs font-bold text-amber-500/60 uppercase tracking-wider flex items-center gap-2">
+              <i class="fas fa-sparkles"></i>
+              生成结果
+            </span>
+            <div class="h-px bg-amber-500/20 flex-1"></div>
+          </div>
+
+          <!-- Analysis Card -->
+          <div class="glass rounded-2xl p-6">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-10 h-10 bg-gradient-to-br from-emerald-500/20 to-teal-600/20 rounded-xl flex items-center justify-center">
+                <i class="fas fa-chart-pie text-emerald-400"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-amber-50">趋势分析</h3>
+                <p class="text-xs text-rose-200/50">AI Deep Dive · V4.0 Core</p>
+              </div>
+              <div class="ml-auto flex items-center gap-2">
+                <span class="px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-400 text-xs font-bold">
+                  <i class="fas fa-check mr-1"></i>Passed
+                </span>
+              </div>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-6">
+              <!-- Analysis Text -->
+              <div class="lg:col-span-2 bg-black/20 rounded-xl p-5 border-l-2 border-amber-500/50">
+                <p id="analysis-text" class="text-rose-100/80 text-sm leading-relaxed">
+                  该内容具有较高的情感共鸣度，目标受众画像匹配度达92%。建议在前3秒增加视觉钩子，使用对比强烈的色彩和动态文字效果，以提升完播率。核心卖点清晰，但可以增加更多用户痛点的描述来增强代入感。
+                </p>
+              </div>
+
+              <!-- Score -->
+              <div class="text-center py-4">
+                <p class="text-xs text-amber-500/60 uppercase tracking-wider mb-2">匹配度</p>
+                <div class="text-5xl font-black gradient-text">92<span class="text-xl">%</span></div>
+                <div class="mt-2 flex items-center justify-center gap-1 text-emerald-400 text-xs">
+                  <i class="fas fa-arrow-trend-up"></i>
+                  <span>Algorithm Optimized</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Title Options -->
+          <div>
+            <h4 class="text-sm font-bold text-amber-50 mb-4 flex items-center gap-2">
+              <i class="fas fa-heading text-amber-400"></i>
+              标题方案
+            </h4>
+            <div id="titles-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <!-- Title cards will be inserted here -->
+            </div>
+          </div>
+
+          <!-- Tags -->
+          <div class="glass rounded-2xl p-6">
+            <h4 class="text-sm font-bold text-amber-50 mb-4 flex items-center gap-2">
+              <i class="fas fa-hashtag text-amber-400"></i>
+              推荐标签
+            </h4>
+            <div id="tags-container" class="flex flex-wrap gap-2">
+              <!-- Tags will be inserted here -->
+            </div>
+          </div>
+
+          <!-- Editing Guide -->
+          <div class="glass rounded-2xl p-6">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 bg-gradient-to-br from-purple-500/20 to-pink-600/20 rounded-xl flex items-center justify-center">
+                <i class="fas fa-clapperboard text-purple-400"></i>
+              </div>
+              <div>
+                <h3 class="font-bold text-amber-50">剪辑指南</h3>
+                <p class="text-xs text-rose-200/50">Director's Cut · AI Recommended</p>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div class="space-y-1">
+                <p class="text-xs text-amber-500/70 uppercase tracking-wider flex items-center gap-2">
+                  <i class="fas fa-gauge-high"></i> 节奏
+                </p>
+                <p id="guide-pace" class="text-sm text-rose-100/80 border-l-2 border-amber-500/30 pl-3 py-1">快节奏，每2-3秒切换画面</p>
+              </div>
+              <div class="space-y-1">
+                <p class="text-xs text-amber-500/70 uppercase tracking-wider flex items-center gap-2">
+                  <i class="fas fa-bolt"></i> 开场
+                </p>
+                <p id="guide-opening" class="text-sm text-rose-100/80 border-l-2 border-amber-500/30 pl-3 py-1">前3秒使用震撼画面或悬念问题</p>
+              </div>
+              <div class="space-y-1">
+                <p class="text-xs text-amber-500/70 uppercase tracking-wider flex items-center gap-2">
+                  <i class="fas fa-music"></i> BGM
+                </p>
+                <p id="guide-bgm" class="text-sm text-rose-100/80 border-l-2 border-amber-500/30 pl-3 py-1">推荐使用热门卡点音乐</p>
+              </div>
+              <div class="space-y-1">
+                <p class="text-xs text-amber-500/70 uppercase tracking-wider flex items-center gap-2">
+                  <i class="fas fa-tv"></i> 视觉
+                </p>
+                <p id="guide-visuals" class="text-sm text-rose-100/80 border-l-2 border-amber-500/30 pl-3 py-1">高对比度色彩，动态文字特效</p>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==================== EMPTY STATE ==================== -->
+        <section id="empty-state" class="text-center py-16">
+          <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-amber-500/10 to-orange-600/10 rounded-2xl flex items-center justify-center">
+            <i class="fas fa-lightbulb text-amber-400/50 text-3xl"></i>
+          </div>
+          <h3 class="text-xl font-bold text-amber-50/80 mb-2">开始创作您的爆款内容</h3>
+          <p class="text-rose-200/50 text-sm max-w-md mx-auto">
+            在上方输入框中输入您的内容或上传素材，AI 将为您生成专业的爆款分析和优化建议
+          </p>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ==================== JAVASCRIPT ==================== -->
+  <script>
+    // Check authentication
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+
+      if (!token || !user) {
+        window.location.href = '/landing.html';
+        return;
+      }
+
+      const userData = JSON.parse(user);
+      document.getElementById('user-email').textContent = userData.email || 'user@example.com';
+      document.getElementById('user-credits').textContent = userData.credits || 0;
+      document.getElementById('header-credits').textContent = userData.credits || 0;
+
+      const maxCredits = 100;
+      const percentage = Math.min((userData.credits / maxCredits) * 100, 100);
+      document.getElementById('credits-bar').style.width = percentage + '%';
+    });
+
+    // Logout
+    function handleLogout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/landing.html';
+    }
+
+    // Generate content
+    async function handleGenerate() {
+      const inputText = document.getElementById('input-text').value.trim();
+      if (!inputText) {
+        alert('请输入内容');
+        return;
+      }
+
+      const btn = document.getElementById('generate-btn');
+      const btnText = document.getElementById('btn-text');
+      const btnLoading = document.getElementById('btn-loading');
+
+      // Set loading state
+      btn.disabled = true;
+      btnText.classList.add('hidden');
+      btnLoading.classList.remove('hidden');
+      btnLoading.classList.add('flex');
+
+      try {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          },
+          body: JSON.stringify({ text: inputText })
+        });
+
+        if (!response.ok) {
+          throw new Error('生成失败，请重试');
+        }
+
+        const data = await response.json();
+
+        // Update credits
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.credits > 0) {
+          user.credits -= 1;
+          localStorage.setItem('user', JSON.stringify(user));
+          document.getElementById('user-credits').textContent = user.credits;
+          document.getElementById('header-credits').textContent = user.credits;
+          const percentage = Math.min((user.credits / 100) * 100, 100);
+          document.getElementById('credits-bar').style.width = percentage + '%';
+        }
+
+        // Show results
+        showResults(data);
+
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        btn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnLoading.classList.add('hidden');
+        btnLoading.classList.remove('flex');
+      }
+    }
+
+    // Show results (demo data for now)
+    function showResults(data) {
+      document.getElementById('empty-state').classList.add('hidden');
+      document.getElementById('results-section').classList.remove('hidden');
+
+      // Demo titles
+      const titles = [
+        { style: '悬念式', title: '99%的人都不知道的秘密，看完我沉默了...', score: 95 },
+        { style: '数字式', title: '3个技巧让你的内容播放量翻10倍！', score: 92 },
+        { style: '情感式', title: '看哭了！这才是真正打动人心的内容', score: 88 },
+        { style: '对比式', title: '普通人 vs 高手，差距就在这一点', score: 85 },
+        { style: '疑问式', title: '为什么你的内容总是没人看？答案在这里', score: 90 },
+        { style: '紧迫式', title: '错过这个方法，你可能要后悔一整年！', score: 87 }
+      ];
+
+      const titlesGrid = document.getElementById('titles-grid');
+      titlesGrid.innerHTML = titles.map((t, i) => `
+        <div class="result-card glass rounded-xl p-5 cursor-pointer" onclick="copyTitle(this, '${t.title.replace(/'/g, "\\'")}')">
+          <div class="flex items-center justify-between mb-3">
+            <span class="px-2 py-1 bg-amber-500/20 rounded text-amber-400 text-xs font-bold">${t.style}</span>
+            <span class="text-xs text-emerald-400 font-bold">${t.score}分</span>
+          </div>
+          <p class="text-amber-50 text-sm leading-relaxed">${t.title}</p>
+          <div class="mt-3 flex items-center gap-2 text-xs text-rose-200/50">
+            <i class="fas fa-copy"></i>
+            <span>点击复制</span>
+          </div>
+        </div>
+      `).join('');
+
+      // Demo tags
+      const tags = ['#爆款秘籍', '#内容创作', '#流量密码', '#涨粉技巧', '#短视频', '#自媒体', '#运营干货', '#创作灵感'];
+      const tagsContainer = document.getElementById('tags-container');
+      tagsContainer.innerHTML = tags.map(tag => `
+        <button class="tag px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-full text-amber-400 text-sm font-medium hover:border-amber-400/50 transition-all" onclick="copyTag('${tag}')">
+          ${tag}
+        </button>
+      `).join('');
+    }
+
+    // Copy title
+    function copyTitle(el, text) {
+      navigator.clipboard.writeText(text);
+      const original = el.innerHTML;
+      el.innerHTML = '<div class="text-center py-4 text-emerald-400"><i class="fas fa-check mr-2"></i>已复制</div>';
+      setTimeout(() => el.innerHTML = original, 1500);
+    }
+
+    // Copy tag
+    function copyTag(tag) {
+      navigator.clipboard.writeText(tag);
+      alert('已复制: ' + tag);
+    }
+  </script>
+</body>
+</html>
