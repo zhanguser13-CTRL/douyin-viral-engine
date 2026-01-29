@@ -166,8 +166,11 @@
 
   <div class="flex min-h-screen relative z-10">
 
+    <!-- Mobile Overlay -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden" onclick="toggleSidebar()"></div>
+
     <!-- ==================== SIDEBAR ==================== -->
-    <aside class="w-64 glass border-r border-amber-500/20 flex flex-col fixed h-full">
+    <aside id="sidebar" class="w-64 glass border-r border-amber-500/20 flex flex-col fixed h-full z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
       <!-- Logo -->
       <div class="p-6 border-b border-amber-500/10">
         <div class="flex items-center gap-3">
@@ -187,19 +190,19 @@
           <i class="fas fa-wand-magic-sparkles text-amber-400 w-5"></i>
           <span class="text-sm font-medium">内容生成</span>
         </a>
-        <a href="#" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-rose-200/70 border-l-2 border-transparent hover:text-amber-50">
+        <a href="#" onclick="showNavComingSoon('历史记录'); return false;" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-rose-200/70 border-l-2 border-transparent hover:text-amber-50">
           <i class="fas fa-clock-rotate-left text-amber-500/50 w-5"></i>
           <span class="text-sm font-medium">历史记录</span>
         </a>
-        <a href="#" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-rose-200/70 border-l-2 border-transparent hover:text-amber-50">
+        <a href="#" onclick="showNavComingSoon('数据分析'); return false;" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-rose-200/70 border-l-2 border-transparent hover:text-amber-50">
           <i class="fas fa-chart-line text-amber-500/50 w-5"></i>
           <span class="text-sm font-medium">数据分析</span>
         </a>
-        <a href="#" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-rose-200/70 border-l-2 border-transparent hover:text-amber-50">
+        <a href="#" onclick="showNavComingSoon('收藏夹'); return false;" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-rose-200/70 border-l-2 border-transparent hover:text-amber-50">
           <i class="fas fa-bookmark text-amber-500/50 w-5"></i>
           <span class="text-sm font-medium">收藏夹</span>
         </a>
-        <a href="#" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-rose-200/70 border-l-2 border-transparent hover:text-amber-50">
+        <a href="#" onclick="showNavComingSoon('设置'); return false;" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-rose-200/70 border-l-2 border-transparent hover:text-amber-50">
           <i class="fas fa-gear text-amber-500/50 w-5"></i>
           <span class="text-sm font-medium">设置</span>
         </a>
@@ -234,32 +237,36 @@
     </aside>
 
     <!-- ==================== MAIN CONTENT ==================== -->
-    <main class="flex-1 ml-64">
+    <main class="flex-1 lg:ml-64">
 
       <!-- Top Bar -->
-      <header class="sticky top-0 z-40 glass-light border-b border-amber-500/10 px-8 py-4">
+      <header class="sticky top-0 z-40 glass-light border-b border-amber-500/10 px-4 lg:px-8 py-4">
         <div class="flex items-center justify-between">
-          <div>
+          <!-- Mobile Menu Button -->
+          <button onclick="toggleSidebar()" class="lg:hidden p-2 text-amber-400 hover:bg-amber-500/10 rounded-lg mr-3">
+            <i class="fas fa-bars text-xl"></i>
+          </button>
+          <div class="flex-1 lg:flex-none">
             <h2 class="text-xl font-bold text-amber-50">内容生成工作台</h2>
             <p class="text-xs text-rose-200/50 mt-0.5">AI 驱动的爆款内容创作平台</p>
           </div>
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 lg:gap-4">
             <!-- Credits Badge -->
-            <div class="flex items-center gap-2 px-4 py-2 glass rounded-xl">
+            <div class="flex items-center gap-2 px-3 lg:px-4 py-2 glass rounded-xl">
               <i class="fas fa-bolt text-amber-400"></i>
               <span id="header-credits" class="text-sm font-bold text-amber-300">10</span>
-              <span class="text-xs text-rose-200/50">次</span>
+              <span class="text-xs text-rose-200/50 hidden sm:inline">次</span>
             </div>
             <!-- Recharge Button -->
-            <button class="px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-xl text-amber-400 text-sm font-medium hover:border-amber-400/50 transition-all">
-              <i class="fas fa-coins mr-2"></i>充值
+            <button onclick="showRechargeModal()" class="px-3 lg:px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-xl text-amber-400 text-sm font-medium hover:border-amber-400/50 transition-all">
+              <i class="fas fa-coins lg:mr-2"></i><span class="hidden lg:inline">充值</span>
             </button>
           </div>
         </div>
       </header>
 
       <!-- Content Area -->
-      <div class="p-8 space-y-8">
+      <div class="p-4 lg:p-8 space-y-6 lg:space-y-8">
 
         <!-- ==================== INPUT SECTION ==================== -->
         <section class="glass rounded-2xl p-6 relative overflow-hidden">
@@ -284,15 +291,15 @@
               class="w-full bg-black/30 border border-amber-500/20 rounded-xl p-4 text-amber-50 placeholder-rose-200/30 resize-none transition-all"
             ></textarea>
 
-            <div class="flex items-center justify-between mt-4">
+            <div class="flex items-center justify-between mt-4 flex-wrap gap-3">
               <div class="flex items-center gap-3">
-                <button class="flex items-center gap-2 px-4 py-2 glass-light rounded-lg text-rose-200/70 hover:text-amber-400 hover:border-amber-500/30 transition-all text-sm">
+                <button onclick="showUploadComingSoon('图片')" class="flex items-center gap-2 px-4 py-2 glass-light rounded-lg text-rose-200/70 hover:text-amber-400 hover:border-amber-500/30 transition-all text-sm">
                   <i class="fas fa-image"></i>
-                  <span>上传图片</span>
+                  <span class="hidden sm:inline">上传图片</span>
                 </button>
-                <button class="flex items-center gap-2 px-4 py-2 glass-light rounded-lg text-rose-200/70 hover:text-amber-400 hover:border-amber-500/30 transition-all text-sm">
+                <button onclick="showUploadComingSoon('视频')" class="flex items-center gap-2 px-4 py-2 glass-light rounded-lg text-rose-200/70 hover:text-amber-400 hover:border-amber-500/30 transition-all text-sm">
                   <i class="fas fa-video"></i>
-                  <span>上传视频</span>
+                  <span class="hidden sm:inline">上传视频</span>
                 </button>
               </div>
 
@@ -370,7 +377,7 @@
               <i class="fas fa-heading text-amber-400"></i>
               标题方案
             </h4>
-            <div id="titles-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div id="titles-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <!-- Title cards will be inserted here -->
             </div>
           </div>
@@ -582,6 +589,29 @@
     function copyTag(tag) {
       navigator.clipboard.writeText(tag);
       alert('已复制: ' + tag);
+    }
+
+    // Toggle sidebar (mobile)
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      sidebar.classList.toggle('-translate-x-full');
+      overlay.classList.toggle('hidden');
+    }
+
+    // Show recharge modal
+    function showRechargeModal() {
+      alert('充值功能即将上线，敬请期待！\n\n如需充值请联系客服。');
+    }
+
+    // Show upload coming soon
+    function showUploadComingSoon(type) {
+      alert(type + '上传功能即将上线，敬请期待！\n\n目前请使用文字输入进行内容生成。');
+    }
+
+    // Show nav coming soon
+    function showNavComingSoon(name) {
+      alert(name + '功能即将上线，敬请期待！');
     }
   </script>
 </body>
