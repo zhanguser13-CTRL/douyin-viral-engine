@@ -7,8 +7,8 @@ import { FooterCopy } from './components/FooterCopy';
 import { EvolutionPanel } from './components/EvolutionPanel';
 import { TrendAnalysis } from './components/TrendAnalysis';
 import { EditingGuide } from './components/EditingGuide';
-import { AuthModal } from './components/auth/AuthModal';
 import { RechargeModal } from './components/auth/RechargeModal';
+import PremiumLandingPage from './PremiumLandingPage';
 import { AppState, MediaData } from './types';
 import { Zap, Globe, Flame, LogOut, Wallet } from 'lucide-react';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
@@ -25,7 +25,7 @@ const AppContent: React.FC = () => {
   });
 
   const [user, setUser] = useState<any>(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [showRechargeModal, setShowRechargeModal] = useState(false);
 
   // 检查登录状态
@@ -35,16 +35,14 @@ const AppContent: React.FC = () => {
 
     if (token && savedUser) {
       setUser(JSON.parse(savedUser));
-    } else {
-      setShowAuthModal(true);
     }
+    setIsCheckingAuth(false);
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
-    setShowAuthModal(true);
   };
 
   const handleAuthSuccess = (token: string, userData: any) => {
@@ -131,6 +129,20 @@ const AppContent: React.FC = () => {
   const handleInputChange = useCallback((val: string) => {
     setState(prev => ({ ...prev, inputText: val }));
   }, []);
+
+  // 检查登录状态时显示加载
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0a0202] via-[#1a0505] to-[#0a0202] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // 未登录时显示落地页
+  if (!user) {
+    return <PremiumLandingPage onSuccess={handleAuthSuccess} />;
+  }
 
   return (
     <div className="min-h-screen text-amber-50 font-sans selection:bg-amber-500/30">
@@ -301,21 +313,13 @@ const AppContent: React.FC = () => {
         </div>
       </footer>
 
-      {/* Modals */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => {}}
-        onSuccess={handleAuthSuccess}
+      {/* Recharge Modal */}
+      <RechargeModal
+        isOpen={showRechargeModal}
+        onClose={() => setShowRechargeModal(false)}
+        currentCredits={user.credits}
+        onSuccess={handleRechargeSuccess}
       />
-
-      {user && (
-        <RechargeModal
-          isOpen={showRechargeModal}
-          onClose={() => setShowRechargeModal(false)}
-          currentCredits={user.credits}
-          onSuccess={handleRechargeSuccess}
-        />
-      )}
     </div>
   );
 };
