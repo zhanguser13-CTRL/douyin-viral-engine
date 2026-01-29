@@ -577,8 +577,8 @@
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
 
-        // Redirect to main app
-        window.location.href = '/';
+        // Redirect to dashboard
+        window.location.href = '/dashboard.html';
 
       } catch (err) {
         showError(err.message);
@@ -593,8 +593,8 @@
       const user = localStorage.getItem('user');
 
       if (token && user) {
-        // Already logged in, redirect to main app
-        window.location.href = '/';
+        // Already logged in, redirect to dashboard
+        window.location.href = '/dashboard.html';
       }
     });
   </script>
