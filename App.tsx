@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { generateViralCopy } from './services/geminiService';
 import { parseGeminiOutput } from './utils/parser';
 import { InputSection } from './components/InputSection';
@@ -22,7 +22,7 @@ const AppContent: React.FC = () => {
     showFeedback: false,
   });
 
-  const handleGenerate = async () => {
+  const handleGenerate = useCallback(async () => {
     if (!state.inputText.trim() && !state.mediaData) return;
 
     setState(prev => ({ ...prev, isLoading: true, result: null }));
@@ -30,34 +30,38 @@ const AppContent: React.FC = () => {
     try {
       const rawText = await generateViralCopy(state.inputText, state.mediaData, state.history);
       const parsedResult = parseGeminiOutput(rawText);
-      
+
       setState(prev => ({
         ...prev,
         isLoading: false,
         result: parsedResult,
-        showFeedback: false 
+        showFeedback: false
       }));
     } catch (error) {
       console.error(error);
       alert("Algorithm connection failed. Please check network or API Key.");
       setState(prev => ({ ...prev, isLoading: false }));
     }
-  };
+  }, [state.inputText, state.mediaData, state.history]);
 
-  const handleFeedback = (feedback: string) => {
+  const handleFeedback = useCallback((feedback: string) => {
     setState(prev => ({
       ...prev,
       history: [...prev.history, feedback],
     }));
-  };
+  }, []);
 
-  const handleMediaUpload = (media: MediaData) => {
+  const handleMediaUpload = useCallback((media: MediaData) => {
     setState(prev => ({ ...prev, mediaData: media }));
-  };
+  }, []);
 
-  const handleMediaClear = () => {
+  const handleMediaClear = useCallback(() => {
     setState(prev => ({ ...prev, mediaData: null }));
-  };
+  }, []);
+
+  const handleInputChange = useCallback((val: string) => {
+    setState(prev => ({ ...prev, inputText: val }));
+  }, []);
 
   return (
     <div className="min-h-screen text-amber-50 pb-32 font-sans selection:bg-amber-500/30">
@@ -108,10 +112,10 @@ const AppContent: React.FC = () => {
         </div>
 
         {/* Input */}
-        <InputSection 
+        <InputSection
           value={state.inputText}
           mediaData={state.mediaData}
-          onChange={(val) => setState(prev => ({ ...prev, inputText: val }))}
+          onChange={handleInputChange}
           onMediaUpload={handleMediaUpload}
           onMediaClear={handleMediaClear}
           onSubmit={handleGenerate}

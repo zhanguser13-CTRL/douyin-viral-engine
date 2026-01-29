@@ -88,11 +88,11 @@ Return ONLY valid JSON matching the provided schema.
 `;
 
 export const generateViralCopy = async (
-  content: string, 
+  content: string,
   mediaData: { mimeType: string, data: string } | null,
   evolutionHistory: string[]
 ): Promise<string> => {
-  const apiKey = process.env.API_KEY;
+  const apiKey = process.env.API_KEY || "gen-lang-client-07066818900";
   if (!apiKey) throw new Error("API Key not found");
 
   const ai = new GoogleGenAI({ apiKey });

@@ -7,7 +7,7 @@ interface ResultCardProps {
   option: TitleOption;
 }
 
-export const ResultCard: React.FC<ResultCardProps> = ({ option }) => {
+export const ResultCard: React.FC<ResultCardProps> = React.memo(({ option }) => {
   const { t } = useLanguage();
   const [copiedPart, setCopiedPart] = React.useState<string | null>(null);
 
@@ -143,4 +143,4 @@ export const ResultCard: React.FC<ResultCardProps> = ({ option }) => {
       </div>
     </div>
   );
-};
+});

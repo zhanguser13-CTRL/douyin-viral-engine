@@ -19,6 +19,20 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        target: 'esnext',
+        minify: 'esbuild',
+        cssMinify: true,
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              'react-vendor': ['react', 'react-dom'],
+              'icons': ['lucide-react'],
+            }
+          }
+        },
+        chunkSizeWarningLimit: 500,
       }
     };
 });

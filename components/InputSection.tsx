@@ -13,7 +13,7 @@ interface InputSectionProps {
   isLoading: boolean;
 }
 
-export const InputSection: React.FC<InputSectionProps> = ({
+export const InputSection: React.FC<InputSectionProps> = React.memo(({
   value,
   mediaData,
   onChange,
@@ -148,4 +148,4 @@ export const InputSection: React.FC<InputSectionProps> = ({
       </div>
     </div>
   );
-};
+});
