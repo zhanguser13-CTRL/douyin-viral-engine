@@ -487,6 +487,14 @@
         return;
       }
 
+      // Check credits
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.credits <= 0) {
+        alert('使用次数不足，请充值！');
+        showRechargeModal();
+        return;
+      }
+
       const btn = document.getElementById('generate-btn');
       const btnText = document.getElementById('btn-text');
       const btnLoading = document.getElementById('btn-loading');
@@ -504,17 +512,25 @@
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + localStorage.getItem('token')
           },
-          body: JSON.stringify({ text: inputText })
+          body: JSON.stringify({ content: inputText })
         });
 
-        if (!response.ok) {
-          throw new Error('生成失败，请重试');
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || '生成失败，请重试');
         }
 
-        const data = await response.json();
+        // Parse the API response data
+        let apiData;
+        try {
+          apiData = typeof result.data === 'string' ? JSON.parse(result.data) : result.data;
+        } catch (e) {
+          console.error('Failed to parse API response:', e);
+          throw new Error('API返回数据格式错误');
+        }
 
         // Update credits
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
         if (user.credits > 0) {
           user.credits -= 1;
           localStorage.setItem('user', JSON.stringify(user));
@@ -524,11 +540,12 @@
           document.getElementById('credits-bar').style.width = percentage + '%';
         }
 
-        // Show results
-        showResults(data);
+        // Show results with real API data
+        showResults(apiData);
 
       } catch (error) {
-        alert(error.message);
+        console.error('Generate error:', error);
+        alert(error.message || '生成失败，请重试');
       } finally {
         btn.disabled = false;
         btnText.classList.remove('hidden');
@@ -537,44 +554,91 @@
       }
     }
 
-    // Show results (demo data for now)
+    // Show results with API data
     function showResults(data) {
       document.getElementById('empty-state').classList.add('hidden');
       document.getElementById('results-section').classList.remove('hidden');
 
-      // Demo titles
-      const titles = [
-        { style: '悬念式', title: '99%的人都不知道的秘密，看完我沉默了...', score: 95 },
-        { style: '数字式', title: '3个技巧让你的内容播放量翻10倍！', score: 92 },
-        { style: '情感式', title: '看哭了！这才是真正打动人心的内容', score: 88 },
-        { style: '对比式', title: '普通人 vs 高手，差距就在这一点', score: 85 },
-        { style: '疑问式', title: '为什么你的内容总是没人看？答案在这里', score: 90 },
-        { style: '紧迫式', title: '错过这个方法，你可能要后悔一整年！', score: 87 }
-      ];
+      // Update trend analysis
+      if (data.trendAnalysis) {
+        document.getElementById('analysis-text').textContent = data.trendAnalysis.content || '分析内容加载中...';
+        // Update score if available
+        const scoreMatch = data.trendAnalysis.matchScore?.match(/\d+/);
+        if (scoreMatch) {
+          const scoreEl = document.querySelector('.gradient-text.text-5xl');
+          if (scoreEl) {
+            scoreEl.innerHTML = scoreMatch[0] + '<span class="text-xl">%</span>';
+          }
+        }
+      }
 
+      // Generate title cards from API options
       const titlesGrid = document.getElementById('titles-grid');
-      titlesGrid.innerHTML = titles.map((t, i) => `
-        <div class="result-card glass rounded-xl p-5 cursor-pointer" onclick="copyTitle(this, '${t.title.replace(/'/g, "\\'")}')">
-          <div class="flex items-center justify-between mb-3">
-            <span class="px-2 py-1 bg-amber-500/20 rounded text-amber-400 text-xs font-bold">${t.style}</span>
-            <span class="text-xs text-emerald-400 font-bold">${t.score}分</span>
-          </div>
-          <p class="text-amber-50 text-sm leading-relaxed">${t.title}</p>
-          <div class="mt-3 flex items-center gap-2 text-xs text-rose-200/50">
-            <i class="fas fa-copy"></i>
-            <span>点击复制</span>
-          </div>
-        </div>
-      `).join('');
+      if (data.options && data.options.length > 0) {
+        titlesGrid.innerHTML = data.options.map((opt, i) => {
+          const titleStyles = ['悬念式', '数字式', '情感式', '对比式', '疑问式', '紧迫式'];
+          const style = titleStyles[i % titleStyles.length];
+          const fullTitle = [opt.titleTop, opt.titleMiddle, opt.titleBottom].filter(Boolean).join(' ');
+          const score = opt.viralScore?.replace(/[^0-9]/g, '') || (95 - i * 3);
 
-      // Demo tags
-      const tags = ['#爆款秘籍', '#内容创作', '#流量密码', '#涨粉技巧', '#短视频', '#自媒体', '#运营干货', '#创作灵感'];
+          return `
+            <div class="result-card glass rounded-xl p-5 cursor-pointer" onclick="copyTitle(this, '${fullTitle.replace(/'/g, "\\'")}')">
+              <div class="flex items-center justify-between mb-3">
+                <span class="px-2 py-1 bg-amber-500/20 rounded text-amber-400 text-xs font-bold">${style}</span>
+                <span class="text-xs text-emerald-400 font-bold">${score}分</span>
+              </div>
+              <div class="space-y-1 text-amber-50 text-sm leading-relaxed">
+                ${opt.titleTop ? `<p class="font-bold">${opt.titleTop}</p>` : ''}
+                ${opt.titleMiddle ? `<p>${opt.titleMiddle}</p>` : ''}
+                ${opt.titleBottom ? `<p class="text-amber-400/80">${opt.titleBottom}</p>` : ''}
+              </div>
+              <div class="mt-3 flex items-center gap-2 text-xs text-rose-200/50">
+                <i class="fas fa-copy"></i>
+                <span>点击复制</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        // Fallback demo titles
+        const titles = [
+          { style: '悬念式', title: '99%的人都不知道的秘密，看完我沉默了...', score: 95 },
+          { style: '数字式', title: '3个技巧让你的内容播放量翻10倍！', score: 92 },
+          { style: '情感式', title: '看哭了！这才是真正打动人心的内容', score: 88 }
+        ];
+        titlesGrid.innerHTML = titles.map((t) => `
+          <div class="result-card glass rounded-xl p-5 cursor-pointer" onclick="copyTitle(this, '${t.title.replace(/'/g, "\\'")}')">
+            <div class="flex items-center justify-between mb-3">
+              <span class="px-2 py-1 bg-amber-500/20 rounded text-amber-400 text-xs font-bold">${t.style}</span>
+              <span class="text-xs text-emerald-400 font-bold">${t.score}分</span>
+            </div>
+            <p class="text-amber-50 text-sm leading-relaxed">${t.title}</p>
+            <div class="mt-3 flex items-center gap-2 text-xs text-rose-200/50">
+              <i class="fas fa-copy"></i>
+              <span>点击复制</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Update tags from API
       const tagsContainer = document.getElementById('tags-container');
+      const tags = data.tags && data.tags.length > 0
+        ? data.tags
+        : ['#爆款秘籍', '#内容创作', '#流量密码', '#涨粉技巧', '#短视频', '#自媒体'];
       tagsContainer.innerHTML = tags.map(tag => `
         <button class="tag px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-full text-amber-400 text-sm font-medium hover:border-amber-400/50 transition-all" onclick="copyTag('${tag}')">
           ${tag}
         </button>
       `).join('');
+
+      // Update editing guide from API
+      if (data.editingGuide) {
+        document.getElementById('guide-pace').textContent = data.editingGuide.pace || '快节奏，每2-3秒切换画面';
+        document.getElementById('guide-opening').textContent = data.editingGuide.opening || '前3秒使用震撼画面或悬念问题';
+        document.getElementById('guide-bgm').textContent = data.editingGuide.bgm || '推荐使用热门卡点音乐';
+        document.getElementById('guide-visuals').textContent = data.editingGuide.visuals || '高对比度色彩，动态文字特效';
+      }
     }
 
     // Copy title
