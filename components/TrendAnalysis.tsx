@@ -61,13 +61,13 @@ export const TrendAnalysis: React.FC<TrendAnalysisProps> = ({ analysisText, visu
               <div className="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-5">
                  <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-emerald-950/40 border border-emerald-600/30 text-emerald-400 text-[10px] sm:text-xs font-bold">
                     <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    <span className="hidden xs:inline">Compliance Audit Passed</span>
-                    <span className="xs:hidden">Passed</span>
+                    <span className="hidden sm:inline">Compliance Audit Passed</span>
+                    <span className="sm:hidden">Passed</span>
                  </div>
                  <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-amber-950/40 border border-amber-500/30 text-amber-400 text-[10px] sm:text-xs font-bold">
                     <BrainCircuit className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    <span className="hidden xs:inline">Psych Profile Matched</span>
-                    <span className="xs:hidden">Matched</span>
+                    <span className="hidden sm:inline">Psych Profile Matched</span>
+                    <span className="sm:hidden">Matched</span>
                  </div>
               </div>
 

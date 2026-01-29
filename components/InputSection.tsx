@@ -113,7 +113,7 @@ export const InputSection: React.FC<InputSectionProps> = React.memo(({
              disabled={isLoading}
           >
              <Clipboard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-             <span className="hidden xs:inline">{t.uploadBtn}</span>
+             <span className="hidden sm:inline">{t.uploadBtn}</span>
           </button>
           <input
             type="file"
