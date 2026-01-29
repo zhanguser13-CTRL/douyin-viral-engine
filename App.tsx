@@ -37,9 +37,27 @@ const AppContent: React.FC = () => {
         result: parsedResult,
         showFeedback: false
       }));
-    } catch (error) {
-      console.error(error);
-      alert("Algorithm connection failed. Please check network or API Key.");
+    } catch (error: any) {
+      console.error("Generation error:", error);
+      const errorMsg = error?.message || '未知错误';
+
+      // Provide helpful error messages based on error type
+      let userMessage = '算法连接失败。';
+      if (errorMsg.includes('API key')) {
+        userMessage = 'API密钥无效或已过期，请联系管理员。';
+      } else if (errorMsg.includes('quota') || errorMsg.includes('limit')) {
+        userMessage = 'API调用次数已达上限，请稍后再试。';
+      } else if (errorMsg.includes('network') || errorMsg.includes('fetch') || errorMsg.includes('Failed to fetch')) {
+        userMessage = '网络连接失败。如果您在中国大陆，可能需要使用VPN访问Google服务。';
+      } else if (errorMsg.includes('CORS') || errorMsg.includes('blocked')) {
+        userMessage = '跨域请求被阻止，请检查网络设置。';
+      } else if (errorMsg.includes('model')) {
+        userMessage = 'AI模型暂时不可用，请稍后再试。';
+      } else {
+        userMessage = `连接失败: ${errorMsg}`;
+      }
+
+      alert(userMessage);
       setState(prev => ({ ...prev, isLoading: false }));
     }
   }, [state.inputText, state.mediaData, state.history]);

@@ -116,33 +116,50 @@ export const generateViralCopy = async (
   const textPrompt = `
   Analyze this content for Douyin/TikTok (Target: Women 30-50).
   OUTPUT LANGUAGE: SIMPLIFIED CHINESE ONLY.
-  
+
   User Context: "${content || "Visual Analysis"}"
   ${memoryContext}
-  
+
   Task: Generate 3 Viral Strategy Options.
   CONSTRAINTS:
   1. **3-Line Title Stack**: Optimize for 9:16 Vertical Screen. Focus on visual impact and hierarchy.
   2. **LongTicker**: STRICTLY 50-55 chars/segment.
   `;
-  
+
   parts.push({ text: textPrompt });
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: { parts },
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        responseMimeType: "application/json",
-        responseSchema: outputSchema,
-        temperature: 0.7,
-      }
-    });
+  // Try multiple models in order of preference
+  const models = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
 
-    return response.text || "{}";
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    throw error;
+  let lastError: any = null;
+
+  for (const modelName of models) {
+    try {
+      console.log(`Trying model: ${modelName}`);
+      const response = await ai.models.generateContent({
+        model: modelName,
+        contents: { parts },
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION,
+          responseMimeType: "application/json",
+          responseSchema: outputSchema,
+          temperature: 0.7,
+        }
+      });
+
+      if (response.text) {
+        console.log(`Success with model: ${modelName}`);
+        return response.text;
+      }
+    } catch (error: any) {
+      console.error(`Model ${modelName} failed:`, error?.message || error);
+      lastError = error;
+      // Continue to next model
+    }
   }
+
+  // If all models failed, throw detailed error
+  const errorMessage = lastError?.message || 'Unknown error';
+  console.error("All models failed. Last error:", errorMessage);
+  throw new Error(`API调用失败: ${errorMessage}`);
 };
