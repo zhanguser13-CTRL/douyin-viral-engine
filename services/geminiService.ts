@@ -130,7 +130,7 @@ export const generateViralCopy = async (
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-3-flash-preview',
       contents: { parts },
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
