@@ -452,18 +452,68 @@
 
   <!-- ==================== JAVASCRIPT ==================== -->
   <script>
+    // HTML escape function to prevent XSS
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Safe JSON parse
+    function safeJsonParse(str, fallback = {}) {
+      try {
+        return JSON.parse(str);
+      } catch (e) {
+        console.error('JSON parse error:', e);
+        return fallback;
+      }
+    }
+
+    // Safe clipboard copy
+    async function safeCopy(text) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } else {
+          // Fallback for older browsers
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          return true;
+        }
+      } catch (e) {
+        console.error('Copy failed:', e);
+        return false;
+      }
+    }
+
     // Check authentication
     document.addEventListener('DOMContentLoaded', () => {
       const token = localStorage.getItem('token');
-      const user = localStorage.getItem('user');
+      const userStr = localStorage.getItem('user');
 
-      if (!token || !user) {
+      if (!token || !userStr) {
         window.location.href = '/landing.html';
         return;
       }
 
-      const userData = JSON.parse(user);
-      document.getElementById('user-email').textContent = userData.email || 'user@example.com';
+      const userData = safeJsonParse(userStr, null);
+      if (!userData) {
+        // Invalid user data, clear and redirect
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/landing.html';
+        return;
+      }
+
+      document.getElementById('user-email').textContent = escapeHtml(userData.email) || 'user@example.com';
       document.getElementById('user-credits').textContent = userData.credits || 0;
       document.getElementById('header-credits').textContent = userData.credits || 0;
 
@@ -488,7 +538,8 @@
       }
 
       // Check credits
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const userStr = localStorage.getItem('user');
+      const user = safeJsonParse(userStr, { credits: 0 });
       if (user.credits <= 0) {
         alert('使用次数不足，请充值！');
         showRechargeModal();
@@ -515,9 +566,20 @@
           body: JSON.stringify({ content: inputText })
         });
 
-        const result = await response.json();
+        // Handle network errors
+        if (!response.ok) {
+          if (response.status === 401) {
+            alert('登录已过期，请重新登录');
+            handleLogout();
+            return;
+          }
+          const errorData = safeJsonParse(await response.text(), {});
+          throw new Error(errorData.error || '服务器错误，请稍后重试');
+        }
 
-        if (!response.ok || !result.success) {
+        const result = safeJsonParse(await response.text(), {});
+
+        if (!result.success) {
           throw new Error(result.error || '生成失败，请重试');
         }
 
@@ -545,7 +607,12 @@
 
       } catch (error) {
         console.error('Generate error:', error);
-        alert(error.message || '生成失败，请重试');
+        // More user-friendly error messages
+        let message = error.message || '生成失败，请重试';
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          message = '网络连接失败，请检查网络后重试';
+        }
+        alert(message);
       } finally {
         btn.disabled = false;
         btnText.classList.remove('hidden');
@@ -554,7 +621,7 @@
       }
     }
 
-    // Show results with API data
+    // Show results with API data (XSS-safe)
     function showResults(data) {
       document.getElementById('empty-state').classList.add('hidden');
       document.getElementById('results-section').classList.remove('hidden');
@@ -567,30 +634,34 @@
         if (scoreMatch) {
           const scoreEl = document.querySelector('.gradient-text.text-5xl');
           if (scoreEl) {
-            scoreEl.innerHTML = scoreMatch[0] + '<span class="text-xl">%</span>';
+            scoreEl.innerHTML = escapeHtml(scoreMatch[0]) + '<span class="text-xl">%</span>';
           }
         }
       }
 
-      // Generate title cards from API options
+      // Generate title cards from API options (XSS-safe)
       const titlesGrid = document.getElementById('titles-grid');
       if (data.options && data.options.length > 0) {
         titlesGrid.innerHTML = data.options.map((opt, i) => {
           const titleStyles = ['悬念式', '数字式', '情感式', '对比式', '疑问式', '紧迫式'];
           const style = titleStyles[i % titleStyles.length];
+          const titleTop = escapeHtml(opt.titleTop || '');
+          const titleMiddle = escapeHtml(opt.titleMiddle || '');
+          const titleBottom = escapeHtml(opt.titleBottom || '');
           const fullTitle = [opt.titleTop, opt.titleMiddle, opt.titleBottom].filter(Boolean).join(' ');
-          const score = opt.viralScore?.replace(/[^0-9]/g, '') || (95 - i * 3);
+          const scoreRaw = opt.viralScore?.replace(/[^0-9]/g, '') || (95 - i * 3);
+          const score = escapeHtml(String(scoreRaw));
 
           return `
-            <div class="result-card glass rounded-xl p-5 cursor-pointer" onclick="copyTitle(this, '${fullTitle.replace(/'/g, "\\'")}')">
+            <div class="result-card glass rounded-xl p-5 cursor-pointer" data-title="${escapeHtml(fullTitle)}" onclick="copyTitleFromData(this)">
               <div class="flex items-center justify-between mb-3">
                 <span class="px-2 py-1 bg-amber-500/20 rounded text-amber-400 text-xs font-bold">${style}</span>
                 <span class="text-xs text-emerald-400 font-bold">${score}分</span>
               </div>
               <div class="space-y-1 text-amber-50 text-sm leading-relaxed">
-                ${opt.titleTop ? `<p class="font-bold">${opt.titleTop}</p>` : ''}
-                ${opt.titleMiddle ? `<p>${opt.titleMiddle}</p>` : ''}
-                ${opt.titleBottom ? `<p class="text-amber-400/80">${opt.titleBottom}</p>` : ''}
+                ${titleTop ? `<p class="font-bold">${titleTop}</p>` : ''}
+                ${titleMiddle ? `<p>${titleMiddle}</p>` : ''}
+                ${titleBottom ? `<p class="text-amber-400/80">${titleBottom}</p>` : ''}
               </div>
               <div class="mt-3 flex items-center gap-2 text-xs text-rose-200/50">
                 <i class="fas fa-copy"></i>
@@ -607,12 +678,12 @@
           { style: '情感式', title: '看哭了！这才是真正打动人心的内容', score: 88 }
         ];
         titlesGrid.innerHTML = titles.map((t) => `
-          <div class="result-card glass rounded-xl p-5 cursor-pointer" onclick="copyTitle(this, '${t.title.replace(/'/g, "\\'")}')">
+          <div class="result-card glass rounded-xl p-5 cursor-pointer" data-title="${escapeHtml(t.title)}" onclick="copyTitleFromData(this)">
             <div class="flex items-center justify-between mb-3">
               <span class="px-2 py-1 bg-amber-500/20 rounded text-amber-400 text-xs font-bold">${t.style}</span>
               <span class="text-xs text-emerald-400 font-bold">${t.score}分</span>
             </div>
-            <p class="text-amber-50 text-sm leading-relaxed">${t.title}</p>
+            <p class="text-amber-50 text-sm leading-relaxed">${escapeHtml(t.title)}</p>
             <div class="mt-3 flex items-center gap-2 text-xs text-rose-200/50">
               <i class="fas fa-copy"></i>
               <span>点击复制</span>
@@ -621,18 +692,21 @@
         `).join('');
       }
 
-      // Update tags from API
+      // Update tags from API (XSS-safe)
       const tagsContainer = document.getElementById('tags-container');
       const tags = data.tags && data.tags.length > 0
         ? data.tags
         : ['#爆款秘籍', '#内容创作', '#流量密码', '#涨粉技巧', '#短视频', '#自媒体'];
-      tagsContainer.innerHTML = tags.map(tag => `
-        <button class="tag px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-full text-amber-400 text-sm font-medium hover:border-amber-400/50 transition-all" onclick="copyTag('${tag}')">
-          ${tag}
-        </button>
-      `).join('');
+      tagsContainer.innerHTML = tags.map(tag => {
+        const safeTag = escapeHtml(tag);
+        return `
+          <button class="tag px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-full text-amber-400 text-sm font-medium hover:border-amber-400/50 transition-all" data-tag="${safeTag}" onclick="copyTagFromData(this)">
+            ${safeTag}
+          </button>
+        `;
+      }).join('');
 
-      // Update editing guide from API
+      // Update editing guide from API (using textContent for safety)
       if (data.editingGuide) {
         document.getElementById('guide-pace').textContent = data.editingGuide.pace || '快节奏，每2-3秒切换画面';
         document.getElementById('guide-opening').textContent = data.editingGuide.opening || '前3秒使用震撼画面或悬念问题';
@@ -641,18 +715,28 @@
       }
     }
 
-    // Copy title
-    function copyTitle(el, text) {
-      navigator.clipboard.writeText(text);
-      const original = el.innerHTML;
-      el.innerHTML = '<div class="text-center py-4 text-emerald-400"><i class="fas fa-check mr-2"></i>已复制</div>';
-      setTimeout(() => el.innerHTML = original, 1500);
+    // Copy title from data attribute (XSS-safe)
+    async function copyTitleFromData(el) {
+      const text = el.getAttribute('data-title');
+      const success = await safeCopy(text);
+      if (success) {
+        const original = el.innerHTML;
+        el.innerHTML = '<div class="text-center py-4 text-emerald-400"><i class="fas fa-check mr-2"></i>已复制</div>';
+        setTimeout(() => el.innerHTML = original, 1500);
+      } else {
+        alert('复制失败，请手动复制');
+      }
     }
 
-    // Copy tag
-    function copyTag(tag) {
-      navigator.clipboard.writeText(tag);
-      alert('已复制: ' + tag);
+    // Copy tag from data attribute (XSS-safe)
+    async function copyTagFromData(el) {
+      const tag = el.getAttribute('data-tag');
+      const success = await safeCopy(tag);
+      if (success) {
+        alert('已复制: ' + tag);
+      } else {
+        alert('复制失败，请手动复制');
+      }
     }
 
     // Toggle sidebar (mobile)
